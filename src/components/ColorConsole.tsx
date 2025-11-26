@@ -27,14 +27,29 @@ export const ColorConsole = () => {
   const [effects, setEffects] = useState({ shadow: 10, glow: 5, grain: 20, vignette: 30 });
   const [hexInput, setHexInput] = useState('');
   const [hexError, setHexError] = useState(false);
+  const isHexInputFocusedRef = useRef(false);
+  const lastSyncedHexRef = useRef('');
 
   // Derive the Hex string for display/Input
   const baseColorHex = useMemo(() => culori.formatHex(colorState), [colorState]);
 
-  // Sync hex input when color changes externally
+  // Initialize hex input on mount only
   useEffect(() => {
-    setHexInput(baseColorHex.toUpperCase());
-    setHexError(false);
+    const initialHex = baseColorHex.toUpperCase();
+    setHexInput(initialHex);
+    lastSyncedHexRef.current = initialHex;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync hex input when color changes externally (but not when user is typing)
+  useEffect(() => {
+    // Only sync if the user is not currently editing the hex input
+    // and the color actually changed from an external source
+    if (!isHexInputFocusedRef.current && baseColorHex.toUpperCase() !== lastSyncedHexRef.current) {
+      setHexInput(baseColorHex.toUpperCase());
+      setHexError(false);
+      lastSyncedHexRef.current = baseColorHex.toUpperCase();
+    }
   }, [baseColorHex]);
 
   const palette = useMemo(() => {
@@ -74,43 +89,93 @@ export const ColorConsole = () => {
     let current = safeConvert(colorState, editMode);
     if (!current) return;
 
-    // Update the channel
-    (current as any)[channel] = val;
+    // Create a NEW object with the updated channel value
+    // This ensures React detects the state change (new object reference)
+    const updated = { ...current, [channel]: val };
 
-    // Set state directly to this object.
+    // Set state with the NEW object reference
     // We do NOT convert back to hex or oklch immediately to avoid precision loss.
     // We trust culori's converters to handle the object in the next render.
-    setColorState(current);
+    setColorState(updated);
   }, [colorState, editMode]);
 
   const handleHueChange = (newHue: number) => {
     let current = safeConvert(colorState, 'oklch');
     if (!current) return;
-    (current as any).h = newHue;
-    setColorState(current);
+    
+    // Create a NEW object with the updated hue
+    // This ensures React detects the state change (new object reference)
+    const updated = { ...current, h: newHue };
+    
+    // Set state with the NEW object reference
+    setColorState(updated);
   };
 
   const handleHexInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    setHexInput(val.toUpperCase());
+    const upperVal = val.toUpperCase();
+    setHexInput(upperVal);
 
-    // Try to parse the hex value
-    const c = culori.parse(val);
-    if (c) {
+    // Allow partial hex input - only validate format, not completeness
+    const hexPattern = /^#?[0-9A-Fa-f]{0,6}$/;
+    
+    // Clear error if format is valid (even if incomplete)
+    if (hexPattern.test(upperVal)) {
       setHexError(false);
-      const converter = culori.converter('oklch');
-      if (converter) {
-        const converted = converter(c);
-        if (converted) setColorState(converted);
+      
+      // Only update color if we have a complete, valid hex (3 or 6 digits after #)
+      const cleanHex = upperVal.replace('#', '');
+      if (cleanHex.length === 3 || cleanHex.length === 6) {
+        const hexWithHash = upperVal.startsWith('#') ? upperVal : `#${upperVal}`;
+        const c = culori.parse(hexWithHash);
+        if (c) {
+          const converter = culori.converter('oklch');
+          if (converter) {
+            const converted = converter(c);
+            if (converted) {
+              setColorState(converted);
+              lastSyncedHexRef.current = hexWithHash.toUpperCase();
+            }
+          }
+        }
       }
     } else {
-      // Only show error if it's not empty and not a valid partial hex
-      const hexPattern = /^#?[0-9A-Fa-f]{0,6}$/;
-      if (val && !hexPattern.test(val)) {
-        setHexError(true);
-      } else {
+      // Show error only if format is invalid (contains non-hex characters)
+      setHexError(true);
+    }
+  };
+
+  const handleHexFocus = () => {
+    isHexInputFocusedRef.current = true;
+  };
+
+  const handleHexBlur = () => {
+    isHexInputFocusedRef.current = false;
+    
+    // On blur, try to parse and update if valid, or show error
+    const cleanHex = hexInput.replace('#', '');
+    if (cleanHex.length === 3 || cleanHex.length === 6) {
+      const hexWithHash = hexInput.startsWith('#') ? hexInput : `#${hexInput}`;
+      const c = culori.parse(hexWithHash);
+      if (c) {
         setHexError(false);
+        const converter = culori.converter('oklch');
+        if (converter) {
+          const converted = converter(c);
+          if (converted) {
+            setColorState(converted);
+            lastSyncedHexRef.current = hexWithHash.toUpperCase();
+          }
+        }
+      } else {
+        setHexError(true);
       }
+    } else if (hexInput && hexInput.trim() !== '') {
+      // If there's input but it's incomplete, show error
+      setHexError(true);
+    } else {
+      // Empty input is fine
+      setHexError(false);
     }
   };
 
@@ -284,6 +349,8 @@ export const ColorConsole = () => {
                     type="text"
                     value={hexInput}
                     onChange={handleHexInput}
+                    onFocus={handleHexFocus}
+                    onBlur={handleHexBlur}
                     placeholder="#000000"
                     className={`flex-1 h-8 bg-[#080808] border rounded px-2 font-mono text-sm focus:outline-none transition-colors ${
                       hexError
