@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ColorConsole 3000 Pro
 
 A professional color palette generator and analyzer inspired by Dieter Rams' minimalist design philosophy. Built with Next.js, React, and TypeScript.
@@ -174,3 +175,7 @@ Project Link: [https://github.com/loremipsum000/ColorPaletteSynth](https://githu
 ---
 
 Made with ❤️ and inspired by Dieter Rams
+=======
+# ColorPaletteSynth
+A professional color palette generator and analyzer inspired by Dieter Rams' minimalist design philosophy. Built with Next.js, React, and TypeScript.
+>>>>>>> origin/main
