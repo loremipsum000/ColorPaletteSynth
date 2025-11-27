@@ -1,0 +1,8 @@
+1:"$Sreact.fragment"
+2:I[60912,["/_next/static/chunks/00c9abe8812d9c51.js"],"ViewportBoundary"]
+4:I[60912,["/_next/static/chunks/00c9abe8812d9c51.js"],"MetadataBoundary"]
+5:"$Sreact.suspense"
+7:I[88223,["/_next/static/chunks/00c9abe8812d9c51.js"],"IconMark"]
+0:{"buildId":"A0yiE3hwxam53HhZez8Zf","rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":"$@3"}],["$","div",null,{"hidden":true,"children":["$","$L4",null,{"children":["$","$5",null,{"name":"Next.Metadata","children":"$@6"}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"loading":null,"isPartial":false}
+3:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]
+6:[["$","title","0",{"children":"Braun Color Synth | Model 3000"}],["$","meta","1",{"name":"description","content":"Professional color palette generator and analyzer"}],["$","link","2",{"rel":"icon","href":"/favicon.ico?favicon.0b3bf435.ico","sizes":"256x256","type":"image/x-icon"}],["$","$L7","3",{}]]
