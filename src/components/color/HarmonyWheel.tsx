@@ -22,6 +22,12 @@ export const HarmonyWheel = ({ baseColor, type, onHueChange, theme = 'dark' }: H
   // Create stable handlers ONCE that read from refs
   const handleInteraction = useRef((e: MouseEvent | TouchEvent) => {
     if (!containerRef.current || !onHueChangeRef.current) return;
+    
+    // Prevent default only if it's a touch event to stop scrolling
+    if (e.cancelable && (e.type === 'touchmove' || e.type === 'touchstart')) {
+      e.preventDefault();
+    }
+
     const rect = containerRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -36,17 +42,30 @@ export const HarmonyWheel = ({ baseColor, type, onHueChange, theme = 'dark' }: H
     onHueChangeRef.current(angleDeg);
   }).current;
 
-  const handleMouseUp = useRef(() => {
+  const handleEnd = useRef(() => {
+    document.body.style.cursor = '';
+    document.body.style.overflow = ''; // Restore scrolling
+    
     window.removeEventListener('mousemove', handleInteraction);
-    window.removeEventListener('mouseup', handleMouseUp);
+    window.removeEventListener('mouseup', handleEnd);
+    window.removeEventListener('touchmove', handleInteraction);
+    window.removeEventListener('touchend', handleEnd);
   }).current;
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent default to stop scrolling/selection
+    if (e.cancelable) e.preventDefault();
+    
     handleInteraction(e.nativeEvent);
+    
+    document.body.style.cursor = 'crosshair';
+    // document.body.style.overflow = 'hidden'; // Prevent body scroll while dragging
+    
     window.addEventListener('mousemove', handleInteraction);
-    window.addEventListener('mouseup', handleMouseUp);
-  }, [handleInteraction, handleMouseUp]);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleInteraction, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+  }, [handleInteraction, handleEnd]);
 
   const dots = useMemo(() => {
     const converter = culori.converter('oklch');
@@ -66,8 +85,9 @@ export const HarmonyWheel = ({ baseColor, type, onHueChange, theme = 'dark' }: H
   return (
     <div
       ref={containerRef}
-      onMouseDown={handleMouseDown}
-      className={`w-full aspect-square rounded-full border-[2px] shadow-slot relative flex items-center justify-center cursor-crosshair overflow-hidden ${
+      onMouseDown={handleStart}
+      onTouchStart={handleStart}
+      className={`w-full aspect-square rounded-full border-[2px] shadow-slot relative flex items-center justify-center cursor-crosshair overflow-hidden touch-none ${
         isLight ? 'border-[#d6c8b1]' : 'bg-[#111] border-[#222]'
       }`}
       style={{ 

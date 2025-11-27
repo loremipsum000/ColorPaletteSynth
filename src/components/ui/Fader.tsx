@@ -35,10 +35,13 @@ export const Fader = ({ value, val, min = 0, max = 100, label, color, onChange, 
   }, [min, max, onChange, actualValue]);
 
   // Create stable handlers ONCE that read from refs
-  const handleMouseMove = useRef((e: MouseEvent) => {
+  const handleMove = useRef((e: MouseEvent | TouchEvent) => {
     if (!containerRef.current) return;
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    
     const rect = containerRef.current.getBoundingClientRect();
-    const deltaX = e.clientX - startX.current;
+    const deltaX = clientX - startX.current;
     const range = maxRef.current - minRef.current;
     const width = rect.width;
     const sensitivity = range / width;
@@ -47,38 +50,53 @@ export const Fader = ({ value, val, min = 0, max = 100, label, color, onChange, 
     onChangeRef.current(newVal);
   }).current;
 
-  const handleMouseUp = useRef(() => {
+  const handleEnd = useRef(() => {
     setDragging(false);
     document.body.style.cursor = 'default';
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = '';
+    document.body.style.touchAction = '';
+    
+    window.removeEventListener('mousemove', handleMove);
+    window.removeEventListener('mouseup', handleEnd);
+    window.removeEventListener('touchmove', handleMove);
+    window.removeEventListener('touchend', handleEnd);
   }).current;
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    // Prevent default to stop scrolling/selection on touch devices
+    // but only if it's the thumb being dragged
     const target = e.target as HTMLElement;
     const thumb = thumbRef.current;
     const isThumb = thumb && (target === thumb || thumb.contains(target));
     
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+
     if (isThumb) {
-      // Dragging the thumb
       e.stopPropagation();
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault(); // Prevent scrolling
+      
       setDragging(true);
-      startX.current = e.clientX;
+      startX.current = clientX;
       startVal.current = actualValueRef.current || 0;
+      
       document.body.style.cursor = 'ew-resize';
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = 'none';
+      document.body.style.touchAction = 'none';
+      
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchmove', handleMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
     } else {
       // Clicking the track - jump to position
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const clickX = e.clientX - rect.left;
+      const clickX = clientX - rect.left;
       const percent = Math.max(0, Math.min(1, clickX / rect.width));
       const newVal = minRef.current + (percent * (maxRef.current - minRef.current));
       onChangeRef.current(newVal);
     }
-  }, [handleMouseMove, handleMouseUp]);
+  }, [handleMove, handleEnd]);
 
   const percent = Math.min(100, Math.max(0, ((actualValue || 0) - min) / (max - min) * 100));
 
@@ -89,8 +107,9 @@ export const Fader = ({ value, val, min = 0, max = 100, label, color, onChange, 
       }`}>{label}</span>
       <div
         ref={containerRef}
-        onMouseDown={handleMouseDown}
-        className="flex-1 relative h-6 flex items-center group cursor-pointer select-none"
+        onMouseDown={handleStart}
+        onTouchStart={handleStart}
+        className="flex-1 relative h-6 flex items-center group cursor-pointer select-none touch-none"
       >
         <div className={`absolute w-full h-[2px] shadow-[0_1px_0_rgba(255,255,255,0.08)] ${
           isLight ? 'bg-[#d6c8b0]' : 'bg-[#000]'

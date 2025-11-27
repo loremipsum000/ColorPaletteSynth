@@ -19,6 +19,9 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "Braun Color Synth | Model 3000",
   description: "Professional color palette generator and analyzer",
+  icons: {
+    icon: "/favi-synth.svg",
+  },
 };
 
 export default function RootLayout({

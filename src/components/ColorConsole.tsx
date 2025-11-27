@@ -338,11 +338,11 @@ export const ColorConsole = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-[1200px] mt-12 mb-12">
+    <div className="flex flex-col gap-6 w-full max-w-[1200px] mt-6 sm:mt-12 mb-6 sm:mb-12">
       <div className={`w-full rounded-lg flex flex-col overflow-hidden border relative transition-colors duration-300 ${
         themeIsLight
           ? 'bg-[#f4f1eb] text-[#1f1b16] border-[#dcd2c2] shadow-[0_30px_60px_rgba(69,54,36,0.18)]'
-          : 'bg-console-chassis text-console-text border-[#222] shadow-chassis'
+          : 'bg-[#161616] text-console-text border-[#222] shadow-chassis'
       }`}>
         {/* Chassis Screws */}
         <div className="absolute top-2 left-2"><Screw /></div>
@@ -351,7 +351,7 @@ export const ColorConsole = () => {
         <div className="absolute bottom-2 right-2"><Screw /></div>
 
         {/* Branding Bar */}
-        <div className={`h-14 flex items-center px-4 sm:px-8 justify-between select-none relative z-10 border-b transition-colors duration-300 ${
+        <div className={`min-h-[3.5rem] flex flex-col md:flex-row items-center px-4 py-2 md:py-0 justify-between select-none relative z-10 border-b transition-colors duration-300 gap-2 md:gap-0 ${
           themeIsLight ? 'bg-[#fff8ec] border-[#e2d6c4]' : 'bg-[#141414] border-[#2a2a2a]'
         }`}>
           {/* Texture overlay for panel */}
@@ -362,10 +362,10 @@ export const ColorConsole = () => {
               COLOR<span className="text-console-accent">SYNTH</span> <span className="font-light opacity-60">3000</span>
             </span>
           </div>
-          <div className="flex items-center gap-3 sm:gap-6 relative z-10">
+          <div className="flex items-center gap-3 sm:gap-6 relative z-10 flex-wrap justify-center">
             <div className={`text-[9px] font-mono flex gap-4 ${subTextColor}`}>
               <span>PHASE: SYNC</span>
-              <span>OUT: 16-BIT</span>
+              <span className="hidden sm:inline">OUT: 16-BIT</span>
               <span className="text-console-accent flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-console-accent rounded-full animate-pulse"></span> ONLINE
               </span>
@@ -384,7 +384,7 @@ export const ColorConsole = () => {
         <div className="flex flex-col md:flex-row lg:h-[720px] relative z-0">
 
           {/* LEFT RACK: MONITORS */}
-          <div className={`w-full md:w-[340px] p-6 flex flex-col gap-6 relative border-r transition-colors duration-300 ${rackBackground}`}>
+          <div className={`w-full md:w-[340px] p-6 flex flex-col gap-6 relative border-r transition-colors duration-300 order-2 md:order-1 ${rackBackground}`}>
             <div className="absolute inset-0 bg-metal opacity-10 pointer-events-none"></div>
 
             {/* Monitor Module */}
@@ -405,12 +405,12 @@ export const ColorConsole = () => {
           </div>
 
           {/* CENTER RACK: MAIN GRID */}
-          <div className={`flex-1 p-6 min-h-[300px] flex flex-col relative border-r transition-colors duration-300 ${gridBackground}`}>
+          <div className={`flex-1 p-6 h-[280px] md:h-auto min-h-[300px] flex flex-col relative border-r transition-colors duration-300 order-3 md:order-2 ${gridBackground}`}>
             <GridVisualizer colors={palette} effects={effects} />
           </div>
 
           {/* RIGHT RACK: CONTROL DECK */}
-          <div className={`w-full md:w-[420px] p-6 flex flex-col gap-8 relative border-l transition-colors duration-300 ${controlDeckBackground}`}>
+          <div className={`w-full md:w-[420px] p-6 flex flex-col gap-8 relative border-l transition-colors duration-300 order-1 md:order-3 ${controlDeckBackground}`}>
             <div className="absolute inset-0 bg-metal opacity-20 pointer-events-none"></div>
 
             {/* Color Input & Sliders */}
