@@ -7,11 +7,13 @@ interface HarmonyWheelProps {
   baseColor: string;
   type: string;
   onHueChange: (hue: number) => void;
+  theme?: 'light' | 'dark';
 }
 
-export const HarmonyWheel = ({ baseColor, type, onHueChange }: HarmonyWheelProps) => {
+export const HarmonyWheel = ({ baseColor, type, onHueChange, theme = 'dark' }: HarmonyWheelProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const onHueChangeRef = useRef(onHueChange);
+  const isLight = theme === 'light';
 
   useEffect(() => {
     onHueChangeRef.current = onHueChange;
@@ -65,16 +67,22 @@ export const HarmonyWheel = ({ baseColor, type, onHueChange }: HarmonyWheelProps
     <div
       ref={containerRef}
       onMouseDown={handleMouseDown}
-      className="w-full aspect-square bg-[#111] rounded-full border-[2px] border-[#222] shadow-slot relative flex items-center justify-center cursor-crosshair overflow-hidden"
-      style={{ background: 'radial-gradient(circle, #1a1a1a 0%, #050505 100%)' }}
+      className={`w-full aspect-square rounded-full border-[2px] shadow-slot relative flex items-center justify-center cursor-crosshair overflow-hidden ${
+        isLight ? 'border-[#d6c8b1]' : 'bg-[#111] border-[#222]'
+      }`}
+      style={{ 
+        background: isLight 
+          ? 'radial-gradient(circle, #f5ebd7 0%, #e6dcc8 100%)' 
+          : 'radial-gradient(circle, #1a1a1a 0%, #050505 100%)' 
+      }}
     >
-      <div className="absolute inset-0 rounded-full border border-[#333] m-1 opacity-50"></div>
-      <div className="absolute inset-0 rounded-full border border-[#333] m-4 opacity-30"></div>
-      <div className="absolute inset-0 rounded-full border border-[#333] m-8 opacity-20"></div>
+      <div className={`absolute inset-0 rounded-full border m-1 opacity-50 ${isLight ? 'border-[#b0a080]' : 'border-[#333]'}`}></div>
+      <div className={`absolute inset-0 rounded-full border m-4 opacity-30 ${isLight ? 'border-[#b0a080]' : 'border-[#333]'}`}></div>
+      <div className={`absolute inset-0 rounded-full border m-8 opacity-20 ${isLight ? 'border-[#b0a080]' : 'border-[#333]'}`}></div>
 
       {/* Axis Lines */}
-      <div className="absolute w-full h-[1px] bg-[#222]"></div>
-      <div className="absolute h-full w-[1px] bg-[#222]"></div>
+      <div className={`absolute w-full h-[1px] ${isLight ? 'bg-[#d6c8b1]' : 'bg-[#222]'}`}></div>
+      <div className={`absolute h-full w-[1px] ${isLight ? 'bg-[#d6c8b1]' : 'bg-[#222]'}`}></div>
 
       {dots.map((d, i) => {
         const angleRad = (d.h - 90) * (Math.PI / 180);
@@ -85,7 +93,9 @@ export const HarmonyWheel = ({ baseColor, type, onHueChange }: HarmonyWheelProps
         return (
           <div
             key={i}
-            className={`absolute w-3 h-3 rounded-full border border-black shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all duration-100 pointer-events-none`}
+            className={`absolute w-3 h-3 rounded-full border shadow-[0_2px_4px_rgba(0,0,0,0.8)] transition-all duration-100 pointer-events-none ${
+              isLight ? 'border-[#8a7f6b]' : 'border-black'
+            }`}
             style={{
               left: `${x}%`,
               top: `${y}%`,

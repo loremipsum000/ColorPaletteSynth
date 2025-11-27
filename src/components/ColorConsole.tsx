@@ -11,7 +11,7 @@ import { Fader } from './ui/Fader';
 import { DataScreen } from './color/DataScreen';
 import { GridVisualizer } from './color/GridVisualizer';
 import { HarmonyWheel } from './color/HarmonyWheel';
-import { RefreshCw, Download, ImageIcon, FileJson } from './ui/icons';
+import { RefreshCw, Download, ImageIcon, FileJson, ChevronDown, Copy, Check } from './ui/icons';
 
 export const ColorConsole = () => {
   // High precision state: holds the actual object (oklch, rgb, etc.)
@@ -27,6 +27,11 @@ export const ColorConsole = () => {
   const [effects, setEffects] = useState({ shadow: 10, glow: 5, grain: 20, vignette: 30 });
   const [hexInput, setHexInput] = useState('');
   const [hexError, setHexError] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [donationMode, setDonationMode] = useState<'crypto' | 'fiat'>('crypto');
+  const [isDonationsExpanded, setIsDonationsExpanded] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  
   const isHexInputFocusedRef = useRef(false);
   const lastSyncedHexRef = useRef('');
 
@@ -51,6 +56,65 @@ export const ColorConsole = () => {
       lastSyncedHexRef.current = baseColorHex.toUpperCase();
     }
   }, [baseColorHex]);
+
+  // Handle document theme classes
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    } else {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    }
+  }, [theme]);
+
+  const themeIsLight = theme === 'light';
+  const subTextColor = themeIsLight ? 'text-[#7a7363]' : 'text-console-subtext';
+  const panelTextColor = themeIsLight ? 'text-[#1c1c1c]' : 'text-console-text';
+  const rackBackground = themeIsLight ? 'bg-[#f9f4e8] border-[#dfd3c1]' : 'bg-[#111] border-[#222]';
+  const gridBackground = themeIsLight ? 'bg-[#faf5eb] border-[#e5d8c5]' : 'bg-[#0e0e0e] border-[#1a1a1a]';
+  const controlDeckBackground = themeIsLight ? 'bg-[#fff8ed] border-[#e2d6c3]' : 'bg-[#131313] border-[#090909]';
+  const panelSurface = themeIsLight ? 'bg-[#fff7ec] border-[#decfb9]' : 'bg-[#1a1a1a] border-black';
+  const knobSurface = themeIsLight ? 'bg-[#fff6e6] border-[#e0cfb4]' : 'bg-[#1a1a1a] border-black';
+  const inputBgClass = themeIsLight ? 'bg-[#fbf4e6] border-[#dcd0bc] text-[#1f1b16]' : 'bg-[#080808] border-[#222] text-console-text';
+  const randomButtonClass = themeIsLight
+    ? 'w-8 h-8 bg-[#f0e3cc] rounded border border-[#d7c7ac] flex items-center justify-center text-[#5f4f36] hover:bg-[#e7dac1]'
+    : 'w-8 h-8 bg-[#222] rounded border border-[#333] flex items-center justify-center text-console-subtext hover:text-white';
+  const modeActiveClass = themeIsLight ? 'bg-[#201b16] text-[#fefaf1]' : 'bg-[#333] text-white';
+  const modeIdleClass = themeIsLight ? 'bg-[#f0e6d3] text-[#5f523f]' : 'bg-[#111] text-console-subtext';
+  const donationTabBase = 'px-3 py-1 rounded-full border text-[10px] font-semibold transition-colors';
+  const donationTabActive = themeIsLight ? 'bg-[#201b16] text-[#fffaf2] border-[#201b16]' : 'bg-[#2d2d2d] text-white border-[#444]';
+  const donationTabIdle = themeIsLight ? 'bg-[#f1e5cf] text-[#5d4c33] border-[#dac9ae]' : 'bg-[#111] text-console-subtext border-[#333]';
+  const donationCardClass = themeIsLight ? 'bg-white border-[#e6dac5] text-[#1f1b16]' : 'bg-[#0d0d0d] border-[#222] text-console-text';
+
+  const cryptoWallets = [
+    { label: 'EVM', tag: 'Ethereum / EVM', address: '0x9B7bb0cB4A82aEFb722073eb397c5d59417BD381' },
+    { label: 'Sol', tag: 'Solana', address: 'G22c41qKv6AURViwHst8wUxoJnkExeknsLRVd5Yatzxv' },
+    { label: 'BTC', tag: 'Taproot', address: 'bc1pr6nex2teuxsfl40k9j6lu99glqp0swagq85dwhawp8879hdxs9ksxxq0lq' },
+  ];
+
+  const fiatOptions = [
+    { label: 'Revolut', value: '@loremipsum00', description: 'revtag' },
+  ];
+
+  const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+
+  const shortenAddress = (address: string) => {
+    if (address.length <= 10) return address;
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedAddress(text);
+      setTimeout(() => setCopiedAddress(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   const palette = useMemo(() => {
     const converter = culori.converter('oklch');
@@ -274,136 +338,260 @@ export const ColorConsole = () => {
   };
 
   return (
-    <div className="w-full max-w-[1200px] bg-console-chassis rounded-lg shadow-chassis flex flex-col overflow-hidden border border-[#222] relative">
-      {/* Chassis Screws */}
-      <div className="absolute top-2 left-2"><Screw /></div>
-      <div className="absolute top-2 right-2"><Screw /></div>
-      <div className="absolute bottom-2 left-2"><Screw /></div>
-      <div className="absolute bottom-2 right-2"><Screw /></div>
+    <div className="flex flex-col gap-6 w-full max-w-[1200px] mt-12 mb-12">
+      <div className={`w-full rounded-lg flex flex-col overflow-hidden border relative transition-colors duration-300 ${
+        themeIsLight
+          ? 'bg-[#f4f1eb] text-[#1f1b16] border-[#dcd2c2] shadow-[0_30px_60px_rgba(69,54,36,0.18)]'
+          : 'bg-console-chassis text-console-text border-[#222] shadow-chassis'
+      }`}>
+        {/* Chassis Screws */}
+        <div className="absolute top-2 left-2"><Screw /></div>
+        <div className="absolute top-2 right-2"><Screw /></div>
+        <div className="absolute bottom-2 left-2"><Screw /></div>
+        <div className="absolute bottom-2 right-2"><Screw /></div>
 
-      {/* Branding Bar */}
-      <div className="h-14 bg-[#141414] border-b border-[#2a2a2a] flex items-center px-8 justify-between select-none relative z-10">
-        {/* Texture overlay for panel */}
-        <div className="absolute inset-0 bg-metal opacity-20 pointer-events-none"></div>
-        <div className="flex items-center gap-3 relative z-10">
-          <div className="w-4 h-4 bg-console-text rounded-sm shadow-[0_0_10px_rgba(255,255,255,0.2)]"></div>
-          <span className="text-sm font-bold tracking-[0.2em] text-console-text">COLOR<span className="text-console-accent">CONSOLE</span> <span className="font-light opacity-50">3000 PRO</span></span>
-        </div>
-        <div className="text-[9px] font-mono text-console-subtext flex gap-6 relative z-10">
-          <span>PHASE: SYNC</span>
-          <span>OUT: 16-BIT</span>
-          <span className="text-console-accent flex items-center gap-1"><span className="w-1.5 h-1.5 bg-console-accent rounded-full animate-pulse"></span> ONLINE</span>
-        </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row h-[720px] relative z-0">
-
-        {/* LEFT RACK: MONITORS */}
-        <div className="w-full md:w-[340px] bg-[#111] border-r border-[#222] p-6 flex flex-col gap-6 relative">
-          <div className="absolute inset-0 bg-metal opacity-10 pointer-events-none"></div>
-
-          {/* Monitor Module */}
-          <div className="flex-1 min-h-[280px]">
-            <DataScreen color={baseColorHex} />
+        {/* Branding Bar */}
+        <div className={`h-14 flex items-center px-4 sm:px-8 justify-between select-none relative z-10 border-b transition-colors duration-300 ${
+          themeIsLight ? 'bg-[#fff8ec] border-[#e2d6c4]' : 'bg-[#141414] border-[#2a2a2a]'
+        }`}>
+          {/* Texture overlay for panel */}
+          <div className="absolute inset-0 bg-metal opacity-15 pointer-events-none"></div>
+          <div className="flex items-center gap-3 relative z-10">
+            <div className={`w-4 h-4 rounded-sm shadow-[0_0_10px_rgba(255,255,255,0.2)] ${themeIsLight ? 'bg-[#1f1b16]' : 'bg-console-text'}`}></div>
+            <span className={`text-sm font-bold tracking-[0.2em] ${panelTextColor}`}>
+              COLOR<span className="text-console-accent">SYNTH</span> <span className="font-light opacity-60">3000</span>
+            </span>
           </div>
-
-          {/* Phase Module */}
-          <div className="h-[280px] bg-[#0a0a0a] rounded border border-[#222] shadow-slot relative p-4 flex flex-col items-center">
-            <div className="w-full flex justify-between mb-4 border-b border-[#222] pb-1">
-              <span className="text-[9px] font-bold text-console-subtext tracking-widest">HARMONIC PHASE</span>
+          <div className="flex items-center gap-3 sm:gap-6 relative z-10">
+            <div className={`text-[9px] font-mono flex gap-4 ${subTextColor}`}>
+              <span>PHASE: SYNC</span>
+              <span>OUT: 16-BIT</span>
+              <span className="text-console-accent flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-console-accent rounded-full animate-pulse"></span> ONLINE
+              </span>
             </div>
-            <div className="w-48 h-48 relative">
-              <HarmonyWheel baseColor={baseColorHex} type={paletteType} onHueChange={handleHueChange} />
-              <div className="absolute -bottom-6 w-full text-center text-[9px] text-console-subtext font-mono">INTERACTIVE</div>
-            </div>
+            <PushButton 
+              active={false} 
+              onClick={toggleTheme} 
+              theme={theme} 
+              className="h-8 px-4 !flex-row"
+            >
+              {themeIsLight ? 'Dark Mode' : 'Light Mode'}
+            </PushButton>
           </div>
         </div>
 
-        {/* CENTER RACK: MAIN GRID */}
-        <div className="flex-1 bg-[#0e0e0e] p-6 flex flex-col relative border-r border-[#1a1a1a]">
-          <GridVisualizer colors={palette} effects={effects} />
-        </div>
+        <div className="flex flex-col md:flex-row lg:h-[720px] relative z-0">
 
-        {/* RIGHT RACK: CONTROL DECK */}
-        <div className="w-full md:w-[420px] bg-[#131313] p-6 flex flex-col gap-8 relative">
-          <div className="absolute inset-0 bg-metal opacity-20 pointer-events-none"></div>
+          {/* LEFT RACK: MONITORS */}
+          <div className={`w-full md:w-[340px] p-6 flex flex-col gap-6 relative border-r transition-colors duration-300 ${rackBackground}`}>
+            <div className="absolute inset-0 bg-metal opacity-10 pointer-events-none"></div>
 
-          {/* Color Input & Sliders */}
-          <div className="bg-[#1a1a1a] rounded border border-black shadow-panel p-5 relative">
-            <div className="absolute top-2 left-2"><Screw /></div><div className="absolute top-2 right-2"><Screw /></div>
-            <div className="absolute bottom-2 left-2"><Screw /></div><div className="absolute bottom-2 right-2"><Screw /></div>
+            {/* Monitor Module */}
+            <div className="flex-1 min-h-[280px]">
+              <DataScreen color={baseColorHex} />
+            </div>
 
-            <div className="flex gap-2 mb-6">
-              <div className="w-12 h-12 rounded border border-[#333] shadow-slot relative">
-                <div className="absolute inset-0" style={{ backgroundColor: baseColorHex }}></div>
-                <div className="glass-overlay absolute inset-0"></div>
+            {/* Phase Module */}
+            <div className={`h-[280px] rounded border shadow-slot relative p-4 flex flex-col items-center transition-colors duration-300 ${themeIsLight ? 'bg-[#fff1dc] border-[#e0ceb3]' : 'bg-[#0a0a0a] border-[#222]'}`}>
+              <div className={`w-full flex justify-between mb-4 border-b pb-1 ${themeIsLight ? 'border-[#e3d1bb]' : 'border-[#222]'}`}>
+                <span className={`text-[9px] font-bold tracking-widest ${subTextColor}`}>HARMONIC PHASE</span>
               </div>
-              <div className="flex-1 flex flex-col gap-1">
-                <div className="flex gap-1 h-6">
-                  {(['oklch', 'rgb', 'hsl'] as const).map(mode => (
-                    <button key={mode} onClick={() => setEditMode(mode)} className={`flex-1 text-[8px] font-bold uppercase tracking-wider rounded-sm ${editMode === mode ? 'bg-[#333] text-white' : 'bg-[#111] text-console-subtext'}`}>{mode}</button>
-                  ))}
+              <div className="w-48 h-48 relative">
+                <HarmonyWheel baseColor={baseColorHex} type={paletteType} onHueChange={handleHueChange} theme={theme} />
+                <div className={`absolute -bottom-6 w-full text-center text-[9px] font-mono ${subTextColor}`}>INTERACTIVE</div>
+              </div>
+            </div>
+          </div>
+
+          {/* CENTER RACK: MAIN GRID */}
+          <div className={`flex-1 p-6 min-h-[300px] flex flex-col relative border-r transition-colors duration-300 ${gridBackground}`}>
+            <GridVisualizer colors={palette} effects={effects} />
+          </div>
+
+          {/* RIGHT RACK: CONTROL DECK */}
+          <div className={`w-full md:w-[420px] p-6 flex flex-col gap-8 relative border-l transition-colors duration-300 ${controlDeckBackground}`}>
+            <div className="absolute inset-0 bg-metal opacity-20 pointer-events-none"></div>
+
+            {/* Color Input & Sliders */}
+            <div className={`rounded border shadow-panel p-5 relative transition-colors duration-300 ${panelSurface}`}>
+              <div className="absolute top-2 left-2"><Screw /></div><div className="absolute top-2 right-2"><Screw /></div>
+              <div className="absolute bottom-2 left-2"><Screw /></div><div className="absolute bottom-2 right-2"><Screw /></div>
+
+              <div className="flex gap-2 mb-6">
+                <div className={`w-12 h-12 rounded border shadow-slot relative transition-colors duration-300 ${themeIsLight ? 'border-[#d6c8b1]' : 'border-[#333]'}`}>
+                  <div className="absolute inset-0" style={{ backgroundColor: baseColorHex }}></div>
+                  <div className="glass-overlay absolute inset-0"></div>
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={hexInput}
-                    onChange={handleHexInput}
-                    onFocus={handleHexFocus}
-                    onBlur={handleHexBlur}
-                    placeholder="#000000"
-                    className={`flex-1 h-8 bg-[#080808] border rounded px-2 font-mono text-sm focus:outline-none transition-colors ${
-                      hexError
-                        ? 'border-red-500 text-red-400 focus:border-red-400'
-                        : 'border-[#222] text-console-text focus:border-console-accent'
-                      }`}
+                <div className="flex-1 flex flex-col gap-1">
+                  <div className="flex gap-1 h-6">
+                    {(['oklch', 'rgb', 'hsl'] as const).map(mode => (
+                      <button
+                        key={mode}
+                        onClick={() => setEditMode(mode)}
+                        className={`flex-1 text-[8px] font-bold uppercase tracking-wider rounded-sm transition-colors duration-200 ${editMode === mode ? modeActiveClass : modeIdleClass}`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={hexInput}
+                      onChange={handleHexInput}
+                      onFocus={handleHexFocus}
+                      onBlur={handleHexBlur}
+                      placeholder="#000000"
+                      className={`flex-1 h-8 rounded px-2 font-mono text-sm focus:outline-none transition-colors ${inputBgClass} ${
+                        hexError
+                          ? 'border-red-500 text-red-500 focus:border-red-500'
+                          : 'focus:border-console-accent'
+                        }`}
+                    />
+                    <button onClick={getRandomColor} className={randomButtonClass}><RefreshCw size={14} /></button>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                {sliderConfig.map(s => (
+                  <Fader 
+                    key={s.id} 
+                    {...s} 
+                    onChange={sliderHandlers[s.id]} 
+                    theme={theme}
                   />
-                  <button onClick={getRandomColor} className="w-8 h-8 bg-[#222] rounded border border-[#333] flex items-center justify-center text-console-subtext hover:text-white"><RefreshCw size={14} /></button>
-                </div>
+                ))}
               </div>
             </div>
-            <div className="flex flex-col gap-4">
-              {sliderConfig.map(s => (
-                <Fader 
-                  key={s.id} 
-                  {...s} 
-                  onChange={sliderHandlers[s.id]} 
-                />
+
+            {/* Mode Selectors */}
+            <div className="grid grid-cols-3 gap-3">
+              {PALETTE_TYPES.map(t => (
+                <PushButton key={t.id} active={paletteType === t.id} onClick={() => setPaletteType(t.id as typeof paletteType)} icon={t.icon} theme={theme}>{t.label}</PushButton>
               ))}
             </div>
+
+            {/* FX Knobs */}
+            <div className={`rounded border shadow-panel p-5 mt-auto relative transition-colors duration-300 ${knobSurface}`}>
+              <div className="absolute top-2 left-2"><Screw /></div><div className="absolute top-2 right-2"><Screw /></div>
+              <div className="absolute bottom-2 left-2"><Screw /></div><div className="absolute bottom-2 right-2"><Screw /></div>
+
+              <div className={`text-[9px] font-bold tracking-widest text-center mb-4 ${subTextColor}`}>EFFECTS PROCESSOR</div>
+              <div className="grid grid-cols-4 gap-2">
+                <Knob label="SHADOW" value={effects.shadow} onChange={v => setEffects({ ...effects, shadow: v })} theme={theme} />
+                <Knob label="GLOW" value={effects.glow} onChange={v => setEffects({ ...effects, glow: v })} theme={theme} />
+                <Knob label="GRAIN" value={effects.grain} onChange={v => setEffects({ ...effects, grain: v })} theme={theme} />
+                <Knob label="VIGNETTE" value={effects.vignette} onChange={v => setEffects({ ...effects, vignette: v })} theme={theme} />
+              </div>
+            </div>
+
+            {/* Export Buttons */}
+            <div className="grid grid-cols-3 gap-2">
+              <PushButton active={false} onClick={exportJSON} icon={FileJson} theme={theme} className="h-10">JSON</PushButton>
+              <PushButton active={false} onClick={exportPNG} icon={ImageIcon} theme={theme} className="h-10">PNG</PushButton>
+              <PushButton active={false} onClick={exportSVG} icon={Download} theme={theme} className="h-10">SVG</PushButton>
+            </div>
+
           </div>
+        </div>
+      </div>
 
-          {/* Mode Selectors */}
-          <div className="grid grid-cols-3 gap-3">
-            {PALETTE_TYPES.map(t => (
-              <PushButton key={t.id} active={paletteType === t.id} onClick={() => setPaletteType(t.id as typeof paletteType)} icon={t.icon}>{t.label}</PushButton>
-            ))}
-          </div>
+      <footer className="px-4 sm:px-8 py-4 flex flex-col gap-4 lg:flex-row lg:items-start transition-colors duration-300">
+        <div className="flex flex-col gap-1">
+          <a
+            href="https://x.com/Lorem_Ipsum95"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`text-sm font-semibold underline decoration-dotted underline-offset-4 ${panelTextColor}`}
+          >
+            Developed by Dardan Berisha
+          </a>
+          <span className={`text-[10px] uppercase tracking-widest opacity-60 font-medium ${panelTextColor}`}>Inspired by Dieter Rams</span>
+        </div>
 
-          {/* FX Knobs */}
-          <div className="bg-[#1a1a1a] rounded border border-black shadow-panel p-5 mt-auto relative">
-            <div className="absolute top-2 left-2"><Screw /></div><div className="absolute top-2 right-2"><Screw /></div>
-            <div className="absolute bottom-2 left-2"><Screw /></div><div className="absolute bottom-2 right-2"><Screw /></div>
-
-            <div className="text-[9px] font-bold text-console-subtext tracking-widest text-center mb-4">EFFECTS PROCESSOR</div>
-            <div className="grid grid-cols-4 gap-2">
-              <Knob label="SHADOW" value={effects.shadow} onChange={v => setEffects({ ...effects, shadow: v })} />
-              <Knob label="GLOW" value={effects.glow} onChange={v => setEffects({ ...effects, glow: v })} />
-              <Knob label="GRAIN" value={effects.grain} onChange={v => setEffects({ ...effects, grain: v })} />
-              <Knob label="VIGNETTE" value={effects.vignette} onChange={v => setEffects({ ...effects, vignette: v })} />
+        <div className="flex-1 flex flex-col gap-3 lg:ml-auto lg:max-w-xl">
+          <div className="flex flex-wrap items-center gap-3 cursor-pointer select-none" onClick={() => setIsDonationsExpanded(!isDonationsExpanded)}>
+            <span className={`text-xs font-semibold ${panelTextColor}`}>Support the console</span>
+            <div className={`transition-transform duration-200 ${isDonationsExpanded ? 'rotate-180' : ''}`}>
+               <ChevronDown size={16} className={panelTextColor} />
             </div>
           </div>
 
-          {/* Export Buttons */}
-          <div className="flex gap-2">
-            <button onClick={exportJSON} className="flex-1 h-8 bg-[#222] rounded border border-[#333] flex items-center justify-center gap-2 text-[10px] font-bold text-console-subtext hover:text-white hover:bg-[#2a2a2a]"><FileJson size={12} /> JSON</button>
-            <button onClick={exportPNG} className="flex-1 h-8 bg-[#222] rounded border border-[#333] flex items-center justify-center gap-2 text-[10px] font-bold text-console-subtext hover:text-white hover:bg-[#2a2a2a]"><ImageIcon size={12} /> PNG</button>
-            <button onClick={exportSVG} className="flex-1 h-8 bg-[#222] rounded border border-[#333] flex items-center justify-center gap-2 text-[10px] font-bold text-console-subtext hover:text-white hover:bg-[#2a2a2a]"><Download size={12} /> SVG</button>
-          </div>
+          {isDonationsExpanded && (
+            <div className="animate-in slide-in-from-top-2 fade-in duration-200">
+              <div className="flex gap-2 mb-3">
+                <PushButton
+                  active={donationMode === 'crypto'}
+                  onClick={() => setDonationMode('crypto')}
+                  theme={theme}
+                  className="h-8 px-4 !flex-row"
+                >
+                  Crypto
+                </PushButton>
+                <PushButton
+                  active={donationMode === 'fiat'}
+                  onClick={() => setDonationMode('fiat')}
+                  theme={theme}
+                  className="h-8 px-4 !flex-row"
+                >
+                  Fiat
+                </PushButton>
+              </div>
 
+              <div className="min-h-[160px] transition-all duration-300">
+                {donationMode === 'crypto' ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {cryptoWallets.map(wallet => (
+                      <div key={wallet.label} className={`rounded border px-3 py-2 flex flex-col gap-2 ${donationCardClass} min-w-0`}>
+                        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="whitespace-nowrap">{wallet.label}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] truncate ${themeIsLight ? 'bg-[#f1e3ca] text-[#604d34]' : 'bg-[#1e1e1e] text-console-text'}`}>
+                              {wallet.tag}
+                            </span>
+                          </div>
+                          <button 
+                            onClick={() => copyToClipboard(wallet.address)}
+                            className={`p-1 rounded hover:bg-opacity-10 hover:bg-gray-500 transition-colors shrink-0 ${themeIsLight ? 'text-[#5f4f36]' : 'text-console-subtext'}`}
+                            title="Copy Address"
+                          >
+                            {copiedAddress === wallet.address ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                        <p className="font-mono text-xs opacity-80 leading-relaxed" title={wallet.address}>{shortenAddress(wallet.address)}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`rounded border px-3 py-3 flex flex-col gap-3 ${donationCardClass} h-full`}>
+                    {fiatOptions.map(option => (
+                      <div key={option.label} className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm font-semibold">
+                            <span>{option.label}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] uppercase tracking-wide ${themeIsLight ? 'bg-[#f1e4cd] text-[#5f4d33]' : 'bg-[#1f1f1f] text-console-text'}`}>
+                              {option.description}
+                            </span>
+                          </div>
+                          <button 
+                            onClick={() => copyToClipboard(option.value)}
+                            className={`p-1 rounded hover:bg-opacity-10 hover:bg-gray-500 transition-colors ${themeIsLight ? 'text-[#5f4f36]' : 'text-console-subtext'}`}
+                            title="Copy Tag"
+                          >
+                             {copiedAddress === option.value ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                        <p className="font-mono text-sm opacity-80">{option.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      </footer>
     </div>
   );
 };
-

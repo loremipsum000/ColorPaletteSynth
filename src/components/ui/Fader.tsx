@@ -10,9 +10,10 @@ interface FaderProps {
   label: string;
   color?: string;
   onChange: (value: number) => void;
+  theme?: 'light' | 'dark';
 }
 
-export const Fader = ({ value, val, min = 0, max = 100, label, color, onChange }: FaderProps) => {
+export const Fader = ({ value, val, min = 0, max = 100, label, color, onChange, theme = 'dark' }: FaderProps) => {
   const actualValue = value !== undefined ? value : val;
   const [dragging, setDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,6 +24,8 @@ export const Fader = ({ value, val, min = 0, max = 100, label, color, onChange }
   const maxRef = useRef(max);
   const onChangeRef = useRef(onChange);
   const actualValueRef = useRef(actualValue);
+
+  const isLight = theme === 'light';
 
   useEffect(() => {
     minRef.current = min;
@@ -81,13 +84,17 @@ export const Fader = ({ value, val, min = 0, max = 100, label, color, onChange }
 
   return (
     <div className="flex items-center gap-3 w-full relative">
-      <span className="w-8 text-[9px] font-bold text-console-subtext tracking-wider uppercase text-right">{label}</span>
+      <span className={`w-8 text-[9px] font-bold tracking-wider uppercase text-right ${
+        isLight ? 'text-[#7a7363]' : 'text-console-subtext'
+      }`}>{label}</span>
       <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         className="flex-1 relative h-6 flex items-center group cursor-pointer select-none"
       >
-        <div className="absolute w-full h-[2px] bg-[#000] shadow-[0_1px_0_rgba(255,255,255,0.08)]"></div>
+        <div className={`absolute w-full h-[2px] shadow-[0_1px_0_rgba(255,255,255,0.08)] ${
+          isLight ? 'bg-[#d6c8b0]' : 'bg-[#000]'
+        }`}></div>
         <div
           className="absolute h-[2px] opacity-80"
           style={{
@@ -100,10 +107,20 @@ export const Fader = ({ value, val, min = 0, max = 100, label, color, onChange }
         <div
           ref={thumbRef}
           data-fader-thumb
-          className={`absolute h-5 w-3 bg-[#2a2a2a] border border-[#000] rounded shadow-lg flex items-center justify-center z-30 cursor-ew-resize transition-none user-select-none ${dragging ? 'scale-110 bg-[#333] border-console-accent/50' : 'hover:scale-105'}`}
+          className={`absolute h-5 w-3 border rounded shadow-lg flex items-center justify-center z-30 cursor-ew-resize transition-none user-select-none ${
+            dragging 
+              ? `scale-110 border-console-accent/50 ${isLight ? 'bg-[#f8f0e0]' : 'bg-[#333]'}` 
+              : 'hover:scale-105'
+          } ${
+            isLight 
+              ? 'bg-[#f0e6d3] border-[#d6c8b1] shadow-[0_2px_4px_rgba(0,0,0,0.1)]' 
+              : 'bg-[#2a2a2a] border-[#000] shadow-lg'
+          }`}
           style={{ left: `calc(${percent}% - 6px)`, touchAction: 'none', pointerEvents: 'auto' }}
         >
-          <div className="w-full h-[1px] bg-white/30 pointer-events-none"></div>
+          <div className={`w-full h-[1px] pointer-events-none ${
+            isLight ? 'bg-black/10' : 'bg-white/30'
+          }`}></div>
         </div>
       </div>
     </div>

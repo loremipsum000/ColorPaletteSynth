@@ -91,3 +91,15 @@ export const FileJson = (props: IconProps) => (
   </IconBase>
 );
 
+export const Check = (props: IconProps) => (
+  <IconBase {...props}>
+    <polyline points="20 6 9 17 4 12" />
+  </IconBase>
+);
+
+export const ChevronDown = (props: IconProps) => (
+  <IconBase {...props}>
+    <polyline points="6 9 12 15 18 9" />
+  </IconBase>
+);
+
